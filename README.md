@@ -7,3 +7,7 @@ Tutorial 3 gives an example of in the case of CaFe2As2
 
 Output of tutorial 3.
 ![3_3](https://github.com/bingli621/TwinIndex/blob/main/3_3_terminal.png)
+
+PHYSICAL REVIEW B 79, 180508(R) (2009)
+![3_4](https://github.com/bingli621/TwinIndex/blob/main/3_4_PRB.png)
+
