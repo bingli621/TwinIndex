@@ -2,6 +2,5 @@ TwinIndex provides the simulation and symbolic calculation of the scattering pat
 
 Tutorial 3 gives an example of in the case of CaFe2As2
 
-![3_1](https://raw.githubusercontent.com/bingli621/TwinIndex/3_1_domains.png)
-![3_2](https://raw.githubusercontent.com/bingli621/TwinIndex/3_2_peaks.png)
-
+![3_1](https://github.com/bingli621/TwinIndex/blob/main/3_1_domains.png)
+![3_2](https://github.com/bingli621/TwinIndex/blob/main/3_2_peaks.png)
