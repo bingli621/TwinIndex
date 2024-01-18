@@ -474,7 +474,7 @@ class Cell(object):
         sym = sgtbx.bravais_types.bravais_lattice(symbol=spgr_symbol)
         print("-" * 50)
         print(
-            f"Generateing Bragg peaks for a {sym.crystal_system} cell,"
+            f"Generating Bragg peaks for a {sym.crystal_system} cell,"
             + " with a minimal d-spacing of "
             + f"{np.round(d_min,3)} Angstrom."
         )
