@@ -8,8 +8,11 @@ TwinIndex uses the cctbx-base package in the Computational Crystallography Toolb
 To install the required package, run the following commands in terminal.
 
 conda install numpy
+
 conda install sympy
+
 conda install matplotlib
+
 conda install -c conda-forge cctbx-base
 
 
