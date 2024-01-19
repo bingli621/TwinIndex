@@ -1,17 +1,15 @@
 TwinIndex provides the simulation and symbolic calculation of the scattering pattern when the unit cell distorts and creates twin domains.
 
 Installation
+
 It is recommended to use conda to install required packages for TwinIndex.
 TwinIndex uses the cctbx-base package in the Computational Crystallography Toolbox (cctbx) for the calculation of the systematic absence of the given space group. For details of cctbx, see https://cci.lbl.gov/docs/cctbx/.
 
 To install the required package, run the following commands in terminal.
 
 conda install numpy
-
 conda install sympy
-
 conda install matplotlib
-
 conda install -c conda-forge cctbx-base
 
 
