@@ -16,4 +16,7 @@ if __name__ == "__main__":
     cell.origin = -cell.c_vec
     cell.plot_cell()
 
+    cell2 = Cell(spgr="P-1", lattice_params=(9.185, 5.8294, 7.9552, 100, 100.79, 100))
+    cell2.plot_cell()
+
     plt.show()

@@ -42,7 +42,7 @@ class Domains(object):
         prescirbed by rotating abut rot_axes by rot_angles, concecutively.
         """
         cell = self.Cell_original
-        cell_twin = Cell(cell.spgr_symbol, cell.lattice_params)
+        cell_twin = Cell(cell.spgr_symbol, cell.lattice_params, NEW_CELL=False)
 
         if not ((type(rot_angles) is tuple) and (type(rot_axes) is tuple)):
             rot_angles = (rot_angles,)
@@ -59,7 +59,7 @@ class Domains(object):
         if cell.Cell_ref:
             cell_twin.make_as_reference(cell.Cell_ref)
         else:
-            cell_twin.make_as_reference(self.domains_list[0], DIFFERENT_CELL=False)
+            cell_twin.make_as_reference(self.domains_list[0])
         self.domains_list.append(cell_twin)
 
     def plot_domains(self):

@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
 
     # theta = np.arctan(a_O / b_O) / np.pi * 180
-    theta = sp.atan(Cell.a_s / Cell.b_s) / sp.pi * 180
+    theta = sp.atan(cell_ortho.symbol_vars[0] / cell_ortho.symbol_vars[1]) / sp.pi * 180
     # print(theta)
 
     cell_ortho.rotate_cell(rot_angles=-theta, rot_axes=(0, 0, 1))

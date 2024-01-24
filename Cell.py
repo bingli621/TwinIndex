@@ -15,7 +15,10 @@ from cctbx import crystal, sgtbx, miller
 class Cell(object):
     """
     Making a cell of given orientation with given lattice parameters
+    --------------------------------class attributes ----------------------------------
+    new_cell_counter            to counter how many new cells have been generated
     ----------------------------------- attributes ------------------------------------
+    symbol_vars                 symbolic variable with subindices
     spgr_symbol                 string of space group
     spgr_info
     symmetry                    string, "cubic", "tetragonal", "orthorhombic", "hexagonal"
@@ -46,6 +49,7 @@ class Cell(object):
     peaks_to_plot(projection, del_Q=0.1)
     plot_peaks(projection, del_Q=0.1)
     ---------------------------------- static methods -----------------------------------
+    variable_init(i)            Initiate symbolic variables
     rot_vec(theta, n)
     find_rotation(vec1, vec2)
     make_unit_cell
@@ -53,14 +57,23 @@ class Cell(object):
 
     """
 
-    a_s = sp.Symbol("a", positive=True)
-    b_s = sp.Symbol("b", positive=True)
-    c_s = sp.Symbol("c", positive=True)
-    alpha_s = sp.Symbol("alpha", positive=True)
-    beta_s = sp.Symbol("beta", positive=True)
-    gamma_s = sp.Symbol("gamma", positive=True)
+    new_cell_counter = 0
 
-    def __init__(self, spgr=None, lattice_params=None, origin=None):
+    def __init__(self, spgr=None, lattice_params=None, origin=None, NEW_CELL=True):
+        """
+        Initialize a cell with given space group and lattice parameters,and shift
+        the origin. NEW_CELL flag should be set as False if a twin domain is being
+        created.
+        """
+        sp.init_printing(use_unicode=True)
+
+        if NEW_CELL:
+            Cell.new_cell_counter = Cell.new_cell_counter + 1
+            self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter)
+        else:  # a twin domain
+            self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter)
+
+        self.cell_index = Cell.new_cell_counter
         self.spgr_symbol = spgr
         spgr = sgtbx.bravais_types.bravais_lattice(symbol=spgr)
         self.spgr_info = spgr.space_group_info.symbol_and_number()
@@ -78,21 +91,32 @@ class Cell(object):
         self.conv_mat_N = None
         self.peaks_conv = None
 
-        sp.init_printing(use_unicode=True)
         print("-" * 50)
         print(
-            f"Generating a {self.symmetry} unit cell"
+            f"Generating a {self.symmetry} unit cell (#{self.cell_index})"
             + f" with space group {self.spgr_info}."
         )
+
+    @staticmethod
+    def symbolic_variable_init(i):
+        """Generate symbolic variable with subindex i"""
+        a = sp.Symbol(f"a{i}", positive=True)
+        b = sp.Symbol(f"b{i}", positive=True)
+        c = sp.Symbol(f"c{i}", positive=True)
+        alpha = sp.Symbol(f"alpha{i}", positive=True)
+        beta = sp.Symbol(f"beta{i}", positive=True)
+        gamma = sp.Symbol(f"gamma{i}", positive=True)
+        sym_vars = (a, b, c, alpha, beta, gamma)
+        return sym_vars
 
     def set_latt_params(self, lattice_params):
         """Set lattice parammeters based on symmetry"""
         match self.symmetry:
             case "Cubic":
-                # a = sp.Symbol("a", positive=True)
-                self.a = Cell.a_s
-                self.b = Cell.a_s
-                self.c = Cell.a_s
+                a_s = self.symbol_vars[0]
+                self.a = a_s
+                self.b = a_s
+                self.c = a_s
                 self.alpha = sp.pi / 2
                 self.beta = sp.pi / 2
                 self.gamma = sp.pi / 2
@@ -104,11 +128,10 @@ class Cell(object):
                     latt_params = lattice_params
 
             case "Tetragonal":
-                # a = sp.Symbol("a", positive=True)
-                self.a = Cell.a_s
-                self.b = Cell.a_s
-                # self.c = sp.Symbol("c", positive=True)
-                self.c = Cell.c_s
+                a_s = self.symbol_vars[0]
+                self.a = a_s
+                self.b = a_s
+                self.c = self.symbol_vars[2]
                 self.alpha = sp.pi / 2
                 self.beta = sp.pi / 2
                 self.gamma = sp.pi / 2
@@ -120,12 +143,9 @@ class Cell(object):
                     latt_params = lattice_params
 
             case "Orthorhombic":
-                # self.a = sp.Symbol("a", positive=True)
-                # self.b = sp.Symbol("b", positive=True)
-                # self.c = sp.Symbol("c", positive=True)
-                self.a = Cell.a_s
-                self.b = Cell.b_s
-                self.c = Cell.c_s
+                self.a = self.symbol_vars[0]
+                self.b = self.symbol_vars[1]
+                self.c = self.symbol_vars[2]
                 self.alpha = sp.pi / 2
                 self.beta = sp.pi / 2
                 self.gamma = sp.pi / 2
@@ -137,11 +157,10 @@ class Cell(object):
                     latt_params = lattice_params
 
             case "Hexagonal" | "Trigonal":
-                # a = sp.Symbol("a", positive=True)
-                self.a = Cell.a_s
-                self.b = Cell.a_s
-                # self.c = sp.Symbol("c", positive=True)
-                self.c = Cell.c_s
+                a_s = self.symbol_vars[0]
+                self.a = a_s
+                self.b = a_s
+                self.c = self.symbol_vars[2]
                 self.alpha = sp.pi / 2
                 self.beta = sp.pi / 2
                 self.gamma = sp.pi * 2 / 3
@@ -153,15 +172,11 @@ class Cell(object):
                     latt_params = lattice_params
 
             case "Monoclinic":
-                # self.a = sp.Symbol("a", positive=True)
-                # self.b = sp.Symbol("b", positive=True)
-                # self.c = sp.Symbol("c", positive=True)
-                self.a = Cell.a_s
-                self.b = Cell.b_s
-                self.c = Cell.c_s
+                self.a = self.symbol_vars[0]
+                self.b = self.symbol_vars[1]
+                self.c = self.symbol_vars[2]
                 self.alpha = sp.pi / 2
-                # self.beta = sp.Symbol("beta", positive=True)
-                self.beta = Cell.beta_s
+                self.beta = self.symbol_vars[4]
                 self.gamma = sp.pi / 2
 
                 if len(lattice_params) == 4:
@@ -171,18 +186,12 @@ class Cell(object):
                     latt_params = lattice_params
 
             case "Triclinic":
-                # self.a = sp.Symbol("a", positive=True)
-                # self.b = sp.Symbol("b", positive=True)
-                # self.c = sp.Symbol("c", positive=True)
-                # self.alpha = sp.Symbol("alpha", positive=True)
-                # self.beta = sp.Symbol("beta", positive=True)
-                # self.gamma = sp.Symbol("gamma", positive=True)
-                self.a = Cell.a_s
-                self.b = Cell.b_s
-                self.c = Cell.c_s
-                self.alpha = Cell.alpha_s
-                self.beta = Cell.beta_s
-                self.gamma = Cell.gamma_s
+                self.a = self.symbol_vars[0]
+                self.b = self.symbol_vars[1]
+                self.c = self.symbol_vars[2]
+                self.alpha = self.symbol_vars[3]
+                self.beta = self.symbol_vars[4]
+                self.gamma = self.symbol_vars[5]
 
                 if len(lattice_params) == 6:
                     a_N, b_N, c_N, alpha_N, beta_N, gamma_N = lattice_params
@@ -393,38 +402,28 @@ class Cell(object):
 
         return points, positions, faces
 
-    def make_as_reference(self, Cell_ref, DIFFERENT_CELL=True):
+    def make_as_reference(self, Cell_ref):
         """Make Cell_ref as the reference cell when plotting Bragg peaks"""
-
-        if DIFFERENT_CELL:
-            subs_dict_ref = {
-                Cell.a_s: sp.Symbol("a_r", positive=True),
-                Cell.b_s: sp.Symbol("b_r", positive=True),
-                Cell.c_s: sp.Symbol("c_r", positive=True),
-                Cell.alpha_s: sp.Symbol("alpha_r", positive=True),
-                Cell.beta_s: sp.Symbol("beta_r", positive=True),
-                Cell.gamma_s: sp.Symbol("gamma_r", positive=True),
-            }
-            Cell_ref.a = Cell_ref.a.subs(subs_dict_ref)
-            Cell_ref.b = Cell_ref.b.subs(subs_dict_ref)
-            Cell_ref.c = Cell_ref.c.subs(subs_dict_ref)
-            Cell_ref.aplha = Cell_ref.alpha.subs(subs_dict_ref)
-            Cell_ref.beta = Cell_ref.beta.subs(subs_dict_ref)
-            Cell_ref.gamma = Cell_ref.gamma.subs(subs_dict_ref)
 
         Cell_ref.latt_vecs()
         Cell_ref.reciprocal_latt_vec()
 
         self.Cell_ref = Cell_ref
         print(
-            f"Choosing the {self.Cell_ref.symmetry} cell as the reference cell"
-            + f" for the {self.symmetry} cell."
+            f"Choosing the {self.Cell_ref.symmetry} cell (#{self.Cell_ref.cell_index}) "
+            + f"as the reference cell for the {self.symmetry} cell (#{self.cell_index})."
         )
 
         self.conv_mat, self.conv_mat_N = Cell.hkl_conversion_mat(self, Cell_ref)
-        print("The symbolic conversion matrix to the frame of the reference cell is")
+        print(
+            "The symbolic conversion matrix to the frame of the reference cell "
+            + f"(#{self.Cell_ref.cell_index}) is"
+        )
         sp.pprint(self.conv_mat)
-        print("The numerical conversion matrix to the frame of the reference cell is")
+        print(
+            "The numerical conversion matrix to the frame of the reference cell "
+            + f"(#{self.Cell_ref.cell_index}) is"
+        )
         sp.pprint(np.round(self.conv_mat_N, 3))
 
     @staticmethod
@@ -459,22 +458,23 @@ class Cell(object):
         return P_mat, P_mat_N
 
     @staticmethod
-    def generate_peaks(spgr_symbol, lattice_params, d_min):
+    def generate_peaks(Cell, d_min):
         """Generate symmetry allowed Bragg peaks"""
         ms = miller.build_set(
             crystal_symmetry=crystal.symmetry(
-                space_group_symbol=spgr_symbol,
-                unit_cell=lattice_params,
+                space_group_symbol=Cell.spgr_symbol,
+                unit_cell=Cell.lattice_params,
             ),
             anomalous_flag=True,
             d_min=d_min,
         )
         # self.peaks = list(ms.indices())
         peaks = list(ms.expand_to_p1().indices())
-        sym = sgtbx.bravais_types.bravais_lattice(symbol=spgr_symbol)
+        sym = sgtbx.bravais_types.bravais_lattice(symbol=Cell.spgr_symbol)
         print("-" * 50)
         print(
-            f"Generating Bragg peaks for a {sym.crystal_system} cell,"
+            f"Generating Bragg peaks for the {sym.crystal_system} cell "
+            + f"(#{Cell.cell_index}),"
             + " with a minimal d-spacing of "
             + f"{np.round(d_min,3)} Angstrom."
         )
@@ -497,20 +497,16 @@ class Cell(object):
         if self.Cell_ref is None:  # No refernce cell
             if self.peaks is None:
                 # Generate peaks with d_min=1
-                peaks_all = Cell.generate_peaks(
-                    self.spgr_symbol, self.lattice_params, d_min
-                )
+                peaks_all = Cell.generate_peaks(self, d_min)
                 self.peaks = peaks_all
             else:
                 # Peaks should have been generated mannually by
-                # Cell.generate_peaks(spgr_symbol, lattice_params, d_min=1)
+                # Cell.generate_peaks(Cell, d_min=1)
                 # print("No peaks found!")
                 peaks_all = self.peaks
 
         else:  # reference cell chosen!
-            peaks_original = Cell.generate_peaks(
-                self.spgr_symbol, self.lattice_params, d_min
-            )
+            peaks_original = Cell.generate_peaks(self, d_min)
             self.peaks = peaks_original
             # perform converstion
             _, P_mat_N = Cell.hkl_conversion_mat(self, self.Cell_ref)
