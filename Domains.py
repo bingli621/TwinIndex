@@ -19,8 +19,9 @@ class Domains(object):
     Cell_ref                refernece cell for reciprocal space plotting
     domains_list            List of all domains generated
     -------------------------------- methods --------------------------------------
-    make_twin(rot_angles,rot_axes,origin)   generate a twin by a series of rotations
-                                            about given axes, shift origin
+    make_twin_rotation(rot_angles,rot_axes,origin)  generate a twin by a series of rotations
+                                                    about given axes, shift origin
+    make_twin_mirror(plane=(h,k,l),origin)                                              
     plot_domains
     plot_peaks
     """
@@ -35,7 +36,7 @@ class Domains(object):
         else:
             self.Cell_ref = None
 
-    def make_twin(self, rot_angles=(), rot_axes=(), origin=None):
+    def make_twin_rotation(self, rot_angles=(), rot_axes=(), origin=None):
         """
         Generate a twin with the cell parameters of Cell_twin.
         The orientation of Cell_twin is achieved by a series of rotations
@@ -53,7 +54,8 @@ class Domains(object):
         if angles:
             cell_twin.rotate_cell(angles, axes)
 
-        cell_twin.origin = origin
+        if origin:
+            cell_twin.translate_cell(origin)
 
         # choose the reference cell
         if cell.Cell_ref:
@@ -61,6 +63,30 @@ class Domains(object):
         else:
             cell_twin.make_as_reference(self.domains_list[0])
         self.domains_list.append(cell_twin)
+    
+    def make_twin_mirror(self, plane=(1,0,0), origin=None):
+        """
+        Generate a twin with the cell parameters of Cell_twin.
+        The orientation of Cell_twin is achieved by mirroring w.r.t. plane (h,k,l),
+        shift the origin 
+        """
+        cell = self.Cell_original
+        cell_twin = Cell(cell.spgr_symbol, cell.lattice_params, NEW_CELL=False)
+
+        if cell.rot_angles:
+            cell_twin.rotate_cell(cell.rot_angles, cell.rot_axes)
+        cell_twin = cell_twin.mirror_cell(plane)
+        if origin:
+            cell_twin.translate_cell(origin)
+
+        # choose the reference cell
+        if cell.Cell_ref:
+            cell_twin.make_as_reference(cell.Cell_ref)
+        else:
+            cell_twin.make_as_reference(self.domains_list[0])
+        self.domains_list.append(cell_twin)
+
+
 
     def plot_domains(self):
         """Plot refence cell and all domians"""

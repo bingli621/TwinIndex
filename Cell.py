@@ -17,6 +17,7 @@ class Cell(object):
     Making a cell of given orientation with given lattice parameters
     --------------------------------class attributes ----------------------------------
     new_cell_counter            to counter how many new cells have been generated
+    subs_dict                   dictionary of all symbolic variables
     ----------------------------------- attributes ------------------------------------
     symbol_vars                 symbolic variable with subindices
     spgr_symbol                 string of space group
@@ -43,7 +44,9 @@ class Cell(object):
     --------------------------------------- methods -----------------------------------
     latt_vecs                   real space lattice vectors in Cartesian coordinates
     reciprocal_latt_vec         reciprocal space lattice vectors
-    rotate_cell(rot_angle, rot_axis) rotate the cell about rot_axis by rot_angle (deg)
+    rotate_cell(rot_angles, rot_axes) rotate the cell about rot_axis by rot_angle (deg)
+    mirror_cell(plane=(h,k,l))  mirror cell with respect to plane (h,k,l)
+    translate_cell              translation of origin
     plot_cell(c, label)         c for color, lable for legends
     make_as_reference(Cell_ref) Make Cell_ref as the reference cell
     peaks_to_plot(projection, del_Q=0.1)
@@ -58,11 +61,12 @@ class Cell(object):
     """
 
     new_cell_counter = 0
+    subs_dict = {}
 
-    def __init__(self, spgr=None, lattice_params=None, origin=None, NEW_CELL=True):
+    def __init__(self, spgr=None, lattice_params=None, NEW_CELL=True):
         """
-        Initialize a cell with given space group and lattice parameters,and shift
-        the origin. NEW_CELL flag should be set as False if a twin domain is being
+        Initialize a cell with given space group and lattice parameters.
+        NEW_CELL flag should be set as False if a twin domain is being
         created.
         """
         sp.init_printing(use_unicode=True)
@@ -70,6 +74,7 @@ class Cell(object):
         if NEW_CELL:
             Cell.new_cell_counter = Cell.new_cell_counter + 1
             self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter)
+
         else:  # a twin domain
             self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter)
 
@@ -79,7 +84,7 @@ class Cell(object):
         self.spgr_info = spgr.space_group_info.symbol_and_number()
         self.symmetry = spgr.crystal_system
         self.lattice_params = self.set_latt_params(lattice_params)
-        self.origin = origin
+        self.origin = None
         self.rot_angles = ()
         self.rot_axes = ()
         self.latt_vecs()
@@ -97,6 +102,8 @@ class Cell(object):
             + f" with space group {self.spgr_info}."
         )
 
+        Cell.subs_dict = Cell.subs_dict | Cell.numerical_subs_dict(self)
+
     @staticmethod
     def symbolic_variable_init(i):
         """Generate symbolic variable with subindex i"""
@@ -108,6 +115,19 @@ class Cell(object):
         gamma = sp.Symbol(f"gamma{i}", positive=True)
         sym_vars = (a, b, c, alpha, beta, gamma)
         return sym_vars
+
+    @staticmethod
+    def numerical_subs_dict(Cell):
+        """substitution dictionary numerical"""
+        subs_dict = {
+            Cell.a: Cell.lattice_params[0],
+            Cell.b: Cell.lattice_params[1],
+            Cell.c: Cell.lattice_params[2],
+            Cell.alpha: Cell.lattice_params[3] / 180 * np.pi,
+            Cell.beta: Cell.lattice_params[4] / 180 * np.pi,
+            Cell.gamma: Cell.lattice_params[5] / 180 * np.pi,
+        }
+        return subs_dict
 
     def set_latt_params(self, lattice_params):
         """Set lattice parammeters based on symmetry"""
@@ -172,30 +192,44 @@ class Cell(object):
                     latt_params = lattice_params
 
             case "Monoclinic":
-                self.a = self.symbol_vars[0]
-                self.b = self.symbol_vars[1]
-                self.c = self.symbol_vars[2]
-                self.alpha = sp.pi / 2
-                self.beta = self.symbol_vars[4]
-                self.gamma = sp.pi / 2
-
                 if len(lattice_params) == 4:
                     a_N, b_N, c_N, beta_N = lattice_params
                     latt_params = (a_N, b_N, c_N, 90, beta_N, 90)
                 elif len(lattice_params) == 6:
                     latt_params = lattice_params
 
-            case "Triclinic":
                 self.a = self.symbol_vars[0]
                 self.b = self.symbol_vars[1]
                 self.c = self.symbol_vars[2]
-                self.alpha = self.symbol_vars[3]
-                self.beta = self.symbol_vars[4]
-                self.gamma = self.symbol_vars[5]
+                self.alpha = sp.pi / 2
+                if isinstance(latt_params[4], int):
+                    self.beta = latt_params[4] / 180 * sp.pi
+                else:
+                    self.beta = self.symbol_vars[4]
+                self.gamma = sp.pi / 2
 
+            case "Triclinic":
                 if len(lattice_params) == 6:
                     a_N, b_N, c_N, alpha_N, beta_N, gamma_N = lattice_params
                     latt_params = (a_N, b_N, c_N, alpha_N, beta_N, gamma_N)
+
+                self.a = self.symbol_vars[0]
+                self.b = self.symbol_vars[1]
+                self.c = self.symbol_vars[2]
+
+                if isinstance(latt_params[3], int):
+                    self.alpha = latt_params[3] / 180 * sp.pi
+                else:
+                    self.alpha = self.symbol_vars[3]
+                if isinstance(latt_params[4], int):
+                    self.beta = latt_params[4] / 180 * sp.pi
+                else:
+                    self.beta = self.symbol_vars[4]
+                if isinstance(latt_params[5], int):
+                    self.gamma = latt_params[5] / 180 * sp.pi
+                else:
+                    self.gamma = self.symbol_vars[5]
+
         return latt_params
 
     def latt_vecs(self):
@@ -228,14 +262,7 @@ class Cell(object):
     def rotate_cell(self, rot_angles=(0,), rot_axes=([0, 0, 1],)):
         """A series of rotations about rot_axes by rot_angles degress"""
 
-        subs_dict = {
-            self.a: self.lattice_params[0],
-            self.b: self.lattice_params[1],
-            self.c: self.lattice_params[2],
-            self.alpha: self.lattice_params[3] / 180 * np.pi,
-            self.beta: self.lattice_params[4] / 180 * np.pi,
-            self.gamma: self.lattice_params[5] / 180 * np.pi,
-        }
+        subs_dict = Cell.subs_dict
 
         # make tuples if only a single rotation
         if not ((type(rot_angles) is tuple) and (type(rot_axes) is tuple)):
@@ -270,8 +297,10 @@ class Cell(object):
             self.b_vec = sp.trigsimp(r_mat * self.b_vec)
             self.c_vec = sp.trigsimp(r_mat * self.c_vec)
             self.r_mat = sp.trigsimp(self.r_mat * r_mat)
-            # update reciprocal lattice vectors
-            self.reciprocal_latt_vec()
+
+        # update reciprocal lattice vectors
+        self.reciprocal_latt_vec()
+
         return self
 
     @staticmethod
@@ -319,17 +348,65 @@ class Cell(object):
         )
         return theta, n
 
+    def translate_cell(self, vec=None):
+        """Translate cell origin by vector vec"""
+        h, k, l = vec
+        self.origin = h * self.a_vec + k * self.b_vec + l * self.c_vec
+        if vec:
+            print(f"Translating cell #{self.cell_index} by the vector v=")
+            sp.pprint(self.origin)
+        else:
+            print("Translation of the origin not implemented.")
+
+    def mirror_cell(self, plane=(1, 0, 0)):
+        """Mirror cell by plane (h,k,l)"""
+        h, k, l = plane
+        print(f"Mirror cell #{self.cell_index} with respect to plane ({h}, {k}, {l}).")
+        # ------------- find norm ------------------
+        if h == 0:
+            if k == 0:  # (0,0,l)
+                norm = self.c_star
+
+            else:
+                if l == 0:  # (0,k,0)
+                    norm = self.b_star
+                else:  # (0,k,l)
+                    vec = self.c_vec / l - self.b_vec / k
+                    norm = vec.cross(self.a_vec)
+        else:
+            if k == 0:
+                if l == 0:  # (h,0,0)
+                    norm = self.a_star
+                else:  # (h,0,l)
+                    vec = self.c_vec / l - self.a_vec / h
+                    norm = vec.cross(self.b_vec)
+            else:
+                if l == 0:  # (h,k,0)
+                    vec = self.b_vec / k - self.a_vec / h
+                    norm = vec.cross(self.c_vec)
+                else:  # (h,k,l)
+                    vec0 = self.b_vec / k - self.a_vec / h
+                    vec1 = self.c_vec / l - self.a_vec / h
+                    norm = vec0.cross(vec1)
+
+        norm = sp.trigsimp(norm / sp.sqrt(norm.dot(norm)))
+        # print(norm)
+        # ------------mirror latt_vec-----------
+        r_mat = Cell.rot_vec(sp.pi, norm)
+        self.a_vec = sp.trigsimp(r_mat * self.a_vec)
+        self.b_vec = sp.trigsimp(r_mat * self.b_vec)
+        self.c_vec = sp.trigsimp(r_mat * self.c_vec)
+        self.r_mat = sp.trigsimp(self.r_mat * r_mat)
+        # update reciprocal lattice vectors
+        self.reciprocal_latt_vec()
+
+        return self
+
     @staticmethod
     def make_unit_cell(Cell):
         """Plot unit cell in real space"""
-        subs_dict = {
-            Cell.a: Cell.lattice_params[0],
-            Cell.b: Cell.lattice_params[1],
-            Cell.c: Cell.lattice_params[2],
-            Cell.alpha: Cell.lattice_params[3] / 180 * np.pi,
-            Cell.beta: Cell.lattice_params[4] / 180 * np.pi,
-            Cell.gamma: Cell.lattice_params[5] / 180 * np.pi,
-        }
+        subs_dict = Cell.subs_dict
+
         pts = []
         # shfit origin or not
         if Cell.origin:
@@ -402,8 +479,11 @@ class Cell(object):
 
         return points, positions, faces
 
-    def make_as_reference(self, Cell_ref):
-        """Make Cell_ref as the reference cell when plotting Bragg peaks"""
+    def make_as_reference(self, Cell_ref, SYMBOL=False):
+        """
+        Make Cell_ref as the reference cell when plotting Bragg peaks
+        Give symbolic expressions if SYMBOL=True
+        """
 
         Cell_ref.latt_vecs()
         Cell_ref.reciprocal_latt_vec()
@@ -414,20 +494,25 @@ class Cell(object):
             + f"as the reference cell for the {self.symmetry} cell (#{self.cell_index})."
         )
 
-        self.conv_mat, self.conv_mat_N = Cell.hkl_conversion_mat(self, Cell_ref)
-        print(
-            "The symbolic conversion matrix to the frame of the reference cell "
-            + f"(#{self.Cell_ref.cell_index}) is"
-        )
-        sp.pprint(self.conv_mat)
-        print(
-            "The numerical conversion matrix to the frame of the reference cell "
-            + f"(#{self.Cell_ref.cell_index}) is"
-        )
-        sp.pprint(np.round(self.conv_mat_N, 3))
+        if SYMBOL:
+            self.conv_mat, self.conv_mat_N = Cell.hkl_conversion_mat(
+                self, Cell_ref, SYMBOL
+            )
+            print(
+                "The symbolic conversion matrix to the frame of the reference cell "
+                + f"(#{self.Cell_ref.cell_index}) is"
+            )
+            sp.pprint(self.conv_mat)
+        else:
+            self.conv_mat_N = Cell.hkl_conversion_mat(self, Cell_ref, SYMBOL)
+            print(
+                "The numerical conversion matrix to the frame of the reference cell "
+                + f"(#{self.Cell_ref.cell_index}) is"
+            )
+            sp.pprint(np.round(self.conv_mat_N, 3))
 
     @staticmethod
-    def hkl_conversion_mat(Cell, Cell_ref):
+    def hkl_conversion_mat(Cell, Cell_ref, SYMBOL=False):
         """
         return the conversoin matrix P_mat
         P*(h,k,l) of Cell gives (h',k'l') in terms of Cell_ref
@@ -437,25 +522,23 @@ class Cell(object):
         # sp.pprint(R_mat)
         R_ref_mat = Cell_ref.a_star.row_join(Cell_ref.b_star).row_join(Cell_ref.c_star)
         # sp.pprint(R_ref_mat)
-        P_mat = sp.simplify(sp.trigsimp((R_ref_mat**-1) * R_mat))
 
-        subs_dict_N = {
-            Cell.a: Cell.lattice_params[0],
-            Cell.b: Cell.lattice_params[1],
-            Cell.c: Cell.lattice_params[2],
-            Cell.alpha: Cell.lattice_params[3] / 180 * np.pi,
-            Cell.beta: Cell.lattice_params[4] / 180 * np.pi,
-            Cell.gamma: Cell.lattice_params[5] / 180 * np.pi,
-            Cell_ref.a: Cell_ref.lattice_params[0],
-            Cell_ref.b: Cell_ref.lattice_params[1],
-            Cell_ref.c: Cell_ref.lattice_params[2],
-            Cell_ref.alpha: Cell_ref.lattice_params[3] / 180 * np.pi,
-            Cell_ref.beta: Cell_ref.lattice_params[4] / 180 * np.pi,
-            Cell_ref.gamma: Cell_ref.lattice_params[5] / 180 * np.pi,
-        }
-        P_mat_N = sp.matrix2numpy(P_mat.subs(subs_dict_N), dtype=float)
+        if SYMBOL:
+            # mP_mat = sp.simplify(sp.trigsimp((R_ref_mat**-1) * R_mat))
+            P_mat = sp.simplify(sp.trigsimp((R_ref_mat**-1) * R_mat))
+            # subs_dict_N = Cell.numerical_subs_dict(Cell) | Cell.numerical_subs_dict(Cell_ref)
+            P_mat_N = sp.matrix2numpy(P_mat.subs(Cell.subs_dict), dtype=float)
 
-        return P_mat, P_mat_N
+            return P_mat, P_mat_N
+        else:
+            # R_mat_N = sp.matrix2numpy(R_mat.subs(Cell.subs_dict), dtype=float)
+            # R_ref_mat_N = sp.matrix2numpy(R_ref_mat.subs(Cell.subs_dict), dtype=float)
+            # P_mat_N =  sp.simplify(sp.trigsimp((R_ref_mat_N**-1)) * R_mat_N)
+
+            P_mat =(R_ref_mat**-1) * R_mat
+            P_mat_N = sp.matrix2numpy(P_mat.subs(Cell.subs_dict), dtype=float)
+
+            return P_mat_N
 
     @staticmethod
     def generate_peaks(Cell, d_min):
@@ -509,7 +592,7 @@ class Cell(object):
             peaks_original = Cell.generate_peaks(self, d_min)
             self.peaks = peaks_original
             # perform converstion
-            _, P_mat_N = Cell.hkl_conversion_mat(self, self.Cell_ref)
+            P_mat_N = Cell.hkl_conversion_mat(self, self.Cell_ref, SYMBOL=False)
 
             peaks_all = []
             for peak in peaks_original:
@@ -564,14 +647,7 @@ class Cell(object):
     def axes_setup(cell_ref, projection, del_Q):
         """setup the non-orthogonal axes"""
 
-        subs_dict = {
-            cell_ref.a: cell_ref.lattice_params[0],
-            cell_ref.b: cell_ref.lattice_params[1],
-            cell_ref.c: cell_ref.lattice_params[2],
-            cell_ref.alpha: cell_ref.lattice_params[3] / 180 * np.pi,
-            cell_ref.beta: cell_ref.lattice_params[4] / 180 * np.pi,
-            cell_ref.gamma: cell_ref.lattice_params[5] / 180 * np.pi,
-        }
+        subs_dict = Cell.subs_dict
 
         a_star, b_star, c_star = [
             sp.matrix2numpy(cell_ref.a_star.subs(subs_dict), dtype=float).ravel(),

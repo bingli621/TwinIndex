@@ -26,14 +26,21 @@ if __name__ == "__main__":
     theta = sp.atan(cell_ortho.symbol_vars[0] / cell_ortho.symbol_vars[1]) / sp.pi * 180
     # print(theta)
 
-    cell_ortho.rotate_cell(rot_angles=-theta, rot_axes=(0, 0, 1))
+    cell_ortho.rotate_cell(rot_angles=-theta, rot_axes=[0, 0, 1])
     # cell_ortho.origin = -cell_ortho.b_vec / 2
     cell_ortho.make_as_reference(cell_tet)
 
     domains = Domains(cell_ortho)
-    domains.make_twin(rot_angles=2 * theta, rot_axes=cell_ortho.c_vec)
-    domains.make_twin(rot_angles=2 * theta - 90, rot_axes=cell_ortho.c_vec)
-    domains.make_twin(rot_angles=90, rot_axes=cell_ortho.c_vec)
+    # --------- make twins from rotations ------------
+    # domains.make_twin_rotation(rot_angles=2 * theta, rot_axes=cell_ortho.c_vec)
+    # domains.make_twin_rotation(rot_angles=2 * theta - 90, rot_axes=cell_ortho.c_vec)
+    # domains.make_twin_rotation(rot_angles=90, rot_axes=cell_ortho.c_vec)
+    # -------------- make twins from mirror ------------
+    
+    domains.make_twin_mirror(plane=[1,1,0],origin=[0,0,-1])
+    domains.make_twin_rotation(rot_angles=2 * theta - 90, rot_axes=cell_ortho.c_vec)
+    domains.make_twin_rotation(rot_angles=90, rot_axes=cell_ortho.c_vec)
+
     domains.plot_domains()
 
     # generate Bragg peaks, defalut is d_min=1

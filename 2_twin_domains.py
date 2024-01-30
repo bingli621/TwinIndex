@@ -12,8 +12,12 @@ if __name__ == "__main__":
 
     # generating multiple domains of the given cell by rotations
     domains = Domains(cell)
-    domains.make_twin(rot_angles=180, rot_axes=cell.c_vec, origin=cell.b_vec)
-    # domains.make_twin(rot_angles=180, rot_axes=cell.a_vec, origin=cell.b_vec)
+    # ---- rotation is one way to generate the twins
+    # domains.make_twin_rotation(rot_angles=180, rot_axes=cell.c_vec, origin=(0,-1,0))
+    # domains.make_twin_rotation(rot_angles=180, rot_axes=cell.a_vec, origin=(0,-1,0))
+    # -----`mirror is the other way to generate the twins----
+    domains.make_twin_mirror(plane=[1,0,0], origin=[-1,-1,-1])
+    domains.make_twin_mirror(plane=[0,0,1], origin=[-1,-1,-1])
     domains.plot_domains()
 
     # generate Bragg peaks, defalut d_min=1
