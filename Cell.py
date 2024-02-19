@@ -63,7 +63,9 @@ class Cell(object):
     new_cell_counter = 0
     subs_dict = {}
 
-    def __init__(self, spgr=None, lattice_params=None, NEW_CELL=True):
+    def __init__(
+        self, spgr=None, lattice_params=None, NEW_CELL=True, keep_symbolic_indices=None
+    ):
         """
         Initialize a cell with given space group and lattice parameters.
         NEW_CELL flag should be set as False if a twin domain is being
@@ -72,8 +74,13 @@ class Cell(object):
         sp.init_printing(use_unicode=True)
 
         if NEW_CELL:
+            self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter + 1)
+            if keep_symbolic_indices:  # keep the symbolic varible as the previous one
+                for i in keep_symbolic_indices:
+                    self.symbol_vars[i] = Cell.symbolic_variable_init(
+                        Cell.new_cell_counter
+                    )[i]
             Cell.new_cell_counter = Cell.new_cell_counter + 1
-            self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter)
 
         else:  # a twin domain
             self.symbol_vars = Cell.symbolic_variable_init(Cell.new_cell_counter)
@@ -92,6 +99,7 @@ class Cell(object):
         self.r_mat = sp.eye(3)
         self.peaks = None
         self.Cell_ref = None
+        self.REF_SYMBOLIC = None
         self.conv_mat = None
         self.conv_mat_N = None
         self.peaks_conv = None
@@ -113,7 +121,7 @@ class Cell(object):
         alpha = sp.Symbol(f"alpha{i}", positive=True)
         beta = sp.Symbol(f"beta{i}", positive=True)
         gamma = sp.Symbol(f"gamma{i}", positive=True)
-        sym_vars = (a, b, c, alpha, beta, gamma)
+        sym_vars = [a, b, c, alpha, beta, gamma]
         return sym_vars
 
     @staticmethod
@@ -489,6 +497,7 @@ class Cell(object):
         Cell_ref.reciprocal_latt_vec()
 
         self.Cell_ref = Cell_ref
+        self.REF_SYMBOLIC = SYMBOL
         print(
             f"Choosing the {self.Cell_ref.symmetry} cell (#{self.Cell_ref.cell_index}) "
             + f"as the reference cell for the {self.symmetry} cell (#{self.cell_index})."
@@ -505,11 +514,11 @@ class Cell(object):
             sp.pprint(self.conv_mat)
         else:
             self.conv_mat_N = Cell.hkl_conversion_mat(self, Cell_ref, SYMBOL)
-            print(
-                "The numerical conversion matrix to the frame of the reference cell "
-                + f"(#{self.Cell_ref.cell_index}) is"
-            )
-            sp.pprint(np.round(self.conv_mat_N, 3))
+        print(
+            "The numerical conversion matrix to the frame of the reference cell "
+            + f"(#{self.Cell_ref.cell_index}) is"
+        )
+        sp.pprint(np.round(self.conv_mat_N, 3))
 
     @staticmethod
     def hkl_conversion_mat(Cell, Cell_ref, SYMBOL=False):
@@ -535,7 +544,7 @@ class Cell(object):
             # R_ref_mat_N = sp.matrix2numpy(R_ref_mat.subs(Cell.subs_dict), dtype=float)
             # P_mat_N =  sp.simplify(sp.trigsimp((R_ref_mat_N**-1)) * R_mat_N)
 
-            P_mat =(R_ref_mat**-1) * R_mat
+            P_mat = (R_ref_mat**-1) * R_mat
             P_mat_N = sp.matrix2numpy(P_mat.subs(Cell.subs_dict), dtype=float)
 
             return P_mat_N

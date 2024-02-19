@@ -36,14 +36,14 @@ if __name__ == "__main__":
     # domains.make_twin_rotation(rot_angles=2 * theta - 90, rot_axes=cell_ortho.c_vec)
     # domains.make_twin_rotation(rot_angles=90, rot_axes=cell_ortho.c_vec)
     # -------------- make twins from mirror ------------
-    
-    domains.make_twin_mirror(plane=[1,1,0],origin=[0,0,-1])
+
+    domains.make_twin_mirror(plane=[1, 1, 0], origin=[0, 0, -1])
     domains.make_twin_rotation(rot_angles=2 * theta - 90, rot_axes=cell_ortho.c_vec)
     domains.make_twin_rotation(rot_angles=90, rot_axes=cell_ortho.c_vec)
 
     domains.plot_domains()
 
     # generate Bragg peaks, defalut is d_min=1
-    domains.plot_peaks(projection="H,K,0", del_Q=0.1, d_min=1)
+    domains.plot_peaks(projection="H,K,0", del_Q=0.1, d_min=0.7)
 
     plt.show()

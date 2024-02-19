@@ -21,7 +21,7 @@ class Domains(object):
     -------------------------------- methods --------------------------------------
     make_twin_rotation(rot_angles,rot_axes,origin)  generate a twin by a series of rotations
                                                     about given axes, shift origin
-    make_twin_mirror(plane=(h,k,l),origin)                                              
+    make_twin_mirror(plane=(h,k,l),origin)
     plot_domains
     plot_peaks
     """
@@ -63,12 +63,12 @@ class Domains(object):
         else:
             cell_twin.make_as_reference(self.domains_list[0])
         self.domains_list.append(cell_twin)
-    
-    def make_twin_mirror(self, plane=(1,0,0), origin=None):
+
+    def make_twin_mirror(self, plane=(1, 0, 0), origin=None):
         """
         Generate a twin with the cell parameters of Cell_twin.
         The orientation of Cell_twin is achieved by mirroring w.r.t. plane (h,k,l),
-        shift the origin 
+        shift the origin
         """
         cell = self.Cell_original
         cell_twin = Cell(cell.spgr_symbol, cell.lattice_params, NEW_CELL=False)
@@ -81,12 +81,10 @@ class Domains(object):
 
         # choose the reference cell
         if cell.Cell_ref:
-            cell_twin.make_as_reference(cell.Cell_ref)
+            cell_twin.make_as_reference(cell.Cell_ref, cell.REF_SYMBOLIC)
         else:
             cell_twin.make_as_reference(self.domains_list[0])
         self.domains_list.append(cell_twin)
-
-
 
     def plot_domains(self):
         """Plot refence cell and all domians"""
@@ -140,6 +138,14 @@ class Domains(object):
             x, y = np.asarray(x), np.asarray(y)
             return x - y / np.tan(recip_angle), y
 
+        def find_max(nested_list):
+            max_num = 0
+            for l in nested_list:
+                for i in range(len(l)):  # number of dlmains
+                    if len(l[i]):
+                        max_num = np.max([max_num, np.rint(np.max(np.abs(l[i])))])
+            return int(max_num)
+
         if self.Cell_ref:  # reference cell chosen!
             xs_conv = []
             ys_conv = []
@@ -151,6 +157,7 @@ class Domains(object):
             (x_ref, y_ref, _, _, _, _) = self.Cell_ref.peaks_to_plot(
                 projection, del_Q, d_min
             )
+
             for domain in self.domains_list:
                 (
                     x_conv,
@@ -166,6 +173,8 @@ class Domains(object):
                 ys_conv_up.append(y_conv_up)
                 xs_conv_down.append(x_conv_down)
                 ys_conv_down.append(y_conv_down)
+            x_max = find_max([xs_conv, xs_conv_up, xs_conv_down])
+            y_max = find_max([ys_conv, ys_conv_up, ys_conv_down])
 
         else:  # No reference cell
             xs = []
@@ -186,6 +195,9 @@ class Domains(object):
                 ys_up.append(y_up)
                 xs_down.append(x_down)
                 ys_down.append(y_down)
+
+            x_max = find_max([xs, xs_up, xs_down])
+            y_max = find_max([ys, ys_up, ys_down])
 
         x_unit, y_unit, recip_angle, title, xlab, ylab = plot_params
 
@@ -283,8 +295,10 @@ class Domains(object):
         ax_askew.set_ylabel(ylab)
 
         ax_askew.grid(alpha=0.6)
-        ax_askew.set_xlim(-6, 6)
-        ax_askew.set_ylim(-6, 6)
+        ax_askew.set_xlim([-x_max + 1, x_max - 1])
+        ax_askew.set_ylim([-y_max + 1, y_max - 1])
+        ax_askew.set_xticklabels(range(-x_max, x_max, 1))
+        ax_askew.set_yticklabels(range(-y_max, y_max, 1))
 
         plt.tight_layout()
 
