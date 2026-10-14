@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from Cell import Cell
+from twinindex import Cell
 
 
 if __name__ == "__main__":

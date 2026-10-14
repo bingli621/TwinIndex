@@ -1,8 +1,7 @@
 import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
-from Cell import Cell
-from Domains import Domains
+from twinindex import Cell, Domains
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import sympy as sp
-from Cell import Cell
+from twinindex import Cell
 
 
 if __name__ == "__main__":

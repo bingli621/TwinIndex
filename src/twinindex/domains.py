@@ -8,7 +8,7 @@ from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinea
 from mpl_toolkits.axisartist.grid_finder import MaxNLocator
 from mpl_toolkits.axisartist import Subplot
 
-from Cell import Cell
+from twinindex.cell import Cell
 
 
 class Domains(object):
@@ -297,8 +297,6 @@ class Domains(object):
         ax_askew.grid(alpha=0.6)
         ax_askew.set_xlim([-x_max + 1, x_max - 1])
         ax_askew.set_ylim([-y_max + 1, y_max - 1])
-        ax_askew.set_xticklabels(range(-x_max, x_max, 1))
-        ax_askew.set_yticklabels(range(-y_max, y_max, 1))
 
         plt.tight_layout()
 
