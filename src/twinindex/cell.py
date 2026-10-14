@@ -730,10 +730,11 @@ class Cell(object):
         x_unit, y_unit, recip_angle, title, xlab, ylab = plot_params
 
         fig = plt.figure()
+        # large nbins keeps a grid line at every integer r.l.u. for wide plot ranges
         grid_helper = GridHelperCurveLinear(
             (tr, inv_tr),
-            grid_locator1=MaxNLocator(integer=True, steps=[1]),
-            grid_locator2=MaxNLocator(integer=True, steps=[1]),
+            grid_locator1=MaxNLocator(nbins=100, integer=True, steps=[1]),
+            grid_locator2=MaxNLocator(nbins=100, integer=True, steps=[1]),
         )
         ax_askew = Subplot(fig, 1, 1, 1, grid_helper=grid_helper)
         fig.add_subplot(ax_askew)

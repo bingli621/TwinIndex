@@ -87,7 +87,7 @@ class Domains(object):
         self.domains_list.append(cell_twin)
 
     def plot_domains(self):
-        """Plot refence cell and all domians"""
+        """Plot reference cell and all domains"""
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
@@ -141,7 +141,7 @@ class Domains(object):
         def find_max(nested_list):
             max_num = 0
             for l in nested_list:
-                for i in range(len(l)):  # number of dlmains
+                for i in range(len(l)):  # number of domains
                     if len(l[i]):
                         max_num = np.max([max_num, np.rint(np.max(np.abs(l[i])))])
             return int(max_num)
@@ -202,10 +202,11 @@ class Domains(object):
         x_unit, y_unit, recip_angle, title, xlab, ylab = plot_params
 
         fig = plt.figure()
+        # large nbins keeps a grid line at every integer r.l.u. for wide plot ranges
         grid_helper = GridHelperCurveLinear(
             (tr, inv_tr),
-            grid_locator1=MaxNLocator(integer=True, steps=[1]),
-            grid_locator2=MaxNLocator(integer=True, steps=[1]),
+            grid_locator1=MaxNLocator(nbins=100, integer=True, steps=[1]),
+            grid_locator2=MaxNLocator(nbins=100, integer=True, steps=[1]),
         )
         ax_askew = Subplot(fig, 1, 1, 1, grid_helper=grid_helper)
         fig.add_subplot(ax_askew)
@@ -221,21 +222,21 @@ class Domains(object):
                 s = ax_askew.scatter(
                     *tr(xs_conv[i], ys_conv[i]),
                     marker="o",
-                    label=f"domian_{i+1}",
+                    label=f"domain_{i+1}",
                     c=f"C{i}",
                     alpha=marker_alpha,
                 )
                 s_up = ax_askew.scatter(
                     *tr(xs_conv_up[i], ys_conv_up[i]),
                     marker="^",
-                    label=f"domian_{i+1}",
+                    label=f"domain_{i+1}",
                     c=f"C{i}",
                     alpha=marker_alpha,
                 )
                 s_down = ax_askew.scatter(
                     *tr(xs_conv_down[i], ys_conv_down[i]),
                     marker="v",
-                    label=f"domian_{i+1}",
+                    label=f"domain_{i+1}",
                     c=f"C{i}",
                     alpha=marker_alpha,
                 )
@@ -259,21 +260,21 @@ class Domains(object):
                 s = ax_askew.scatter(
                     *tr(xs[i], ys[i]),
                     marker="o",
-                    label=f"domian_{i+1}",
+                    label=f"domain_{i+1}",
                     c=f"C{i}",
                     alpha=marker_alpha,
                 )
                 s_up = ax_askew.scatter(
                     *tr(xs_up[i], ys_up[i]),
                     marker="^",
-                    label=f"domian_{i+1}",
+                    label=f"domain_{i+1}",
                     c=f"C{i}",
                     alpha=marker_alpha,
                 )
                 s_down = ax_askew.scatter(
                     *tr(xs_down[i], ys_down[i]),
                     marker="v",
-                    label=f"domian_{i+1}",
+                    label=f"domain_{i+1}",
                     c=f"C{i}",
                     alpha=marker_alpha,
                 )
